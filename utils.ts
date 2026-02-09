@@ -78,11 +78,13 @@ export const calculateQuoteTotal = (
 ) => {
     let rawMaterialCost = 0;
     let rawOperationalCost = 0;
+    let totalHours = 0;
 
     items.forEach(item => {
         const costs = calculateItemCost(item, filaments, settings);
         rawMaterialCost += costs.materialCost;
         rawOperationalCost += costs.operationalCost;
+        totalHours += item.printTimeHours;
     });
 
     const rawProductionCost = rawMaterialCost + rawOperationalCost;
@@ -91,6 +93,22 @@ export const calculateQuoteTotal = (
     const riskRate = (settings.failureRatePercent || 0) / 100;
     const riskCost = rawProductionCost * riskRate;
     const totalProductionCost = rawProductionCost + riskCost;
+
+    // --- DETALHAMENTO (BREAKDOWN) ---
+    // Recalcula os componentes individuais baseados no total de horas
+    const fixedCostPerHour = (settings.monthlyFixedExpenses || 0) / (settings.workHoursPerMonth || 1);
+    const energyCostPerHour = ((settings.printerPowerWatts || 0) / 1000) * (settings.energyCostPerKwh || 0);
+    const machineDepreciation = (settings.machineValue || 0) / (settings.machineLifespanHours || 1);
+    const laborCost = settings.laborRatePerHour || 0;
+
+    const breakdown = {
+        material: rawMaterialCost,
+        energy: energyCostPerHour * totalHours,
+        fixed: fixedCostPerHour * totalHours,
+        depreciation: machineDepreciation * totalHours,
+        labor: laborCost * totalHours,
+        risk: riskCost
+    };
 
     // 4. Calcula preço BASE com margem de lucro desejada
     // Preço Base = Custo Produção / (1 - Margem%) -> Para garantir a margem sobre a venda
@@ -124,6 +142,7 @@ export const calculateQuoteTotal = (
         rawMaterialCost,
         rawOperationalCost,
         riskCost,
+        breakdown, // Novo campo com detalhes
         totalCost: totalProductionCost,
         finalPrice, // Preço de Venda (Bruto no Marketplace)
         taxAmount: totalTaxAmount,
