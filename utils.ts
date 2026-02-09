@@ -18,20 +18,22 @@ export const formatDate = (timestamp: number) => {
 // --- CÁLCULOS ROBUSTOS ---
 
 export const calculateHourlyOperationalCost = (settings: Settings): number => {
-    // Custo Fixo por Hora = Despesas Mensais / Horas Trabalhadas
-    const fixedCostPerHour = (settings.monthlyFixedExpenses || 0) / (settings.workHoursPerMonth || 1);
+    // Fator de absorção (0.0 a 1.0). Se não definido, assume 1.0 (100%)
+    const absorption = (settings.overheadAbsorptionPercent || 100) / 100;
+
+    // Custo Fixo por Hora = (Despesas Mensais / Horas Trabalhadas) * Absorção
+    const fixedCostPerHour = ((settings.monthlyFixedExpenses || 0) / (settings.workHoursPerMonth || 1)) * absorption;
     
-    // Custo Energia = (Watts / 1000) * Preço kWh
+    // Custo Energia = (Watts / 1000) * Preço kWh (Sempre 100% repassado, é custo variável direto)
     const energyCostPerHour = ((settings.printerPowerWatts || 0) / 1000) * (settings.energyCostPerKwh || 0);
     
-    // Custo Máquina (Depreciação) = Valor / Vida Útil
+    // Custo Máquina (Depreciação) = Valor / Vida Útil (Sempre 100%, é o desgaste real)
     const machineDepreciation = (settings.machineValue || 0) / (settings.machineLifespanHours || 1);
     
-    // Custos extras de manutenção (opcional, se sobrar no campo antigo)
     const extraMaintenance = settings.wearAndTearPerHour || 0;
     
-    // Custo Mão de Obra (Incluído no custo hora da máquina/processo)
-    const laborCost = settings.laborRatePerHour || 0;
+    // Custo Mão de Obra * Absorção
+    const laborCost = (settings.laborRatePerHour || 0) * absorption;
 
     return fixedCostPerHour + energyCostPerHour + machineDepreciation + extraMaintenance + laborCost; 
 };
@@ -95,11 +97,11 @@ export const calculateQuoteTotal = (
     const totalProductionCost = rawProductionCost + riskCost;
 
     // --- DETALHAMENTO (BREAKDOWN) ---
-    // Recalcula os componentes individuais baseados no total de horas
-    const fixedCostPerHour = (settings.monthlyFixedExpenses || 0) / (settings.workHoursPerMonth || 1);
+    const absorption = (settings.overheadAbsorptionPercent || 100) / 100;
+    const fixedCostPerHour = ((settings.monthlyFixedExpenses || 0) / (settings.workHoursPerMonth || 1)) * absorption;
     const energyCostPerHour = ((settings.printerPowerWatts || 0) / 1000) * (settings.energyCostPerKwh || 0);
     const machineDepreciation = (settings.machineValue || 0) / (settings.machineLifespanHours || 1);
-    const laborCost = settings.laborRatePerHour || 0;
+    const laborCost = (settings.laborRatePerHour || 0) * absorption;
 
     const breakdown = {
         material: rawMaterialCost,
@@ -111,42 +113,30 @@ export const calculateQuoteTotal = (
     };
 
     // 4. Calcula preço BASE com margem de lucro desejada
-    // Preço Base = Custo Produção / (1 - Margem%) -> Para garantir a margem sobre a venda
     const safeMargin = Math.max(0, Math.min(99, marginPercent)); 
     const marginRate = safeMargin / 100;
     
-    // Preço que você quer embolsar (antes de taxas de marketplace, mas depois de custos)
-    // Se Custo = 100 e Margem = 50%, Base = 200. Lucro = 100.
     const basePrice = totalProductionCost / (1 - marginRate);
-
-    // 5. Aplicar Taxas de Marketplace (Cálculo Reverso)
-    // Queremos que o (Preço Final - Taxas) = Base Price
-    // Taxas = (PreçoFinal * %Comissão) + TaxaFixa
-    // PreçoFinal - (PreçoFinal * %) - Fixa = BasePrice
-    // PreçoFinal * (1 - %) = BasePrice + Fixa
-    // PreçoFinal = (BasePrice + Fixa) / (1 - %)
 
     const feeConfig = fees.find(f => f.channel === channel) || { percent: 0, fixed: 0 };
     const feeRate = feeConfig.percent / 100;
     const feeFixed = feeConfig.fixed;
 
-    // Proteção contra divisão por zero se taxa for 100% (improvável, mas bom prevenir)
     const divisor = 1 - feeRate;
     const finalPrice = divisor > 0 ? (basePrice + feeFixed) / divisor : basePrice;
     
-    // Valores Finais
     const totalTaxAmount = (finalPrice * feeRate) + feeFixed;
-    const netValue = finalPrice - totalTaxAmount; // Deve ser igual (ou muito próximo) ao basePrice
+    const netValue = finalPrice - totalTaxAmount; 
 
     return {
         rawMaterialCost,
         rawOperationalCost,
         riskCost,
-        breakdown, // Novo campo com detalhes
+        breakdown, 
         totalCost: totalProductionCost,
-        finalPrice, // Preço de Venda (Bruto no Marketplace)
+        finalPrice, 
         taxAmount: totalTaxAmount,
-        netValue, // O que entra no bolso
+        netValue, 
         marginValue: netValue - totalProductionCost
     };
 };

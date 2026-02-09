@@ -35,6 +35,9 @@ export interface Settings {
   workHoursPerMonth: number; // Para diluir as despesas fixas
   laborRatePerHour: number; // Valor da sua hora
   
+  // Amortization for beginners
+  overheadAbsorptionPercent?: number; // % of Fixed + Labor to actually charge (0-100)
+  
   // Machine Depreciation
   machineValue: number; // Valor de compra (ex: 4200)
   machineLifespanHours: number; // Vida util em horas (ex: 8000)

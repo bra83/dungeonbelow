@@ -785,7 +785,8 @@ function App() {
 
     const SettingsView = () => {
         const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-            setSettings(prev => ({ ...prev, [e.target.name]: parseFloat(e.target.value) }));
+            const val = e.target.type === 'range' || e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+            setSettings(prev => ({ ...prev, [e.target.name]: val }));
         };
         const currentMonthTotalFixed = expenses.filter(e => e.isFixed).reduce((acc, curr) => acc + curr.amount, 0);
         const updateFixedExpenses = () => {
@@ -820,6 +821,33 @@ function App() {
                     <p style={{fontSize: '1.8rem', fontWeight: 800, margin: 0}}>{formatCurrency(hourlyCost)}</p>
                     <small style={{fontSize: '0.7rem', color: 'var(--text-light)'}}>{"Soma de Fixo, Energia, M\u00E1quina e M\u00E3o de Obra"}</small>
                 </div>
+
+                {/* ESTRATÉGIA DE PREÇO (Iniciante vs Profissional) */}
+                <div className="neu-card" style={{marginBottom: 20, border: '2px solid var(--accent)'}}>
+                    <h3 style={{marginTop:0, fontSize: '0.9rem', color:'var(--accent)', textTransform:'uppercase'}}>Estrat\u00E9gia de Crescimento</h3>
+                    <p style={{fontSize: '0.85rem', marginBottom: 15}}>
+                        {"Se voc\u00EA vende pouco, cobrar 100% das suas despesas fixas em uma s\u00F3 pe\u00E7a pode deixar o pre\u00E7o invi\u00E1vel. Use este controle para absorver parte dos custos enquanto cresce:"}
+                    </p>
+                    <div className="form-group">
+                        <div style={{display:'flex', justifyContent:'space-between', marginBottom: 5}}>
+                            <label>Absor\u00E7\u00E3o de Custos Fixos + M.O</label>
+                            <span style={{fontWeight: 800, color:'var(--accent)'}}>{settings.overheadAbsorptionPercent || 100}%</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            name="overheadAbsorptionPercent" 
+                            min="0" max="100" step="5" 
+                            value={settings.overheadAbsorptionPercent || 100} 
+                            onChange={handleChange}
+                            style={{width:'100%', cursor:'pointer'}}
+                        />
+                        <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.7rem', color:'var(--text-light)', marginTop: 5}}>
+                            <span>Pre\u00E7o Agressivo (Iniciante)</span>
+                            <span>Recupera\u00E7\u00E3o Total (Pro)</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="neu-card">
                     <h3 style={{marginTop:0, marginBottom: 20, fontSize: '0.9rem', color:'var(--text-light)', textTransform:'uppercase'}}>Custos Operacionais</h3>
                     <div className="erp-form two-col">
