@@ -1059,7 +1059,7 @@ function App() {
         <div className="erp-container">
             <ConfirmationModal isOpen={modalConfig.isOpen} title={modalConfig.title} message={modalConfig.message} onConfirm={modalConfig.onConfirm} onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} isLoading={modalConfig.isLoading} />
             <Toast toasts={toasts} onRemove={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
-            <div className="mobile-header"><h1 className="brand-text">Dungeon Below</h1><button onClick={toggleTheme} className="fab-button" style={{width: 32, height: 32, fontSize: '0.8rem', marginLeft: 'auto', marginRight: 0, boxShadow: 'none', background: 'transparent'}}>{theme === 'light' ? 'ðŸŒ™' : 'â˜€ï¸'}</button></div>
+            <div className="mobile-header"><h1 className="brand-text">Dungeon Below</h1><button onClick={toggleTheme} className="fab-button" style={{width: 32, height: 32, fontSize: '0.8rem', marginLeft: 'auto', marginRight: 0, boxShadow: 'none', background: 'transparent'}}>{theme === 'light' ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg> : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>}</button></div>
             <Navigation currentView={view} setView={setView} toggleTheme={toggleTheme} isDarkMode={theme === 'dark'} />
             <main className="main-content">
                 {view === 'dashboard' && <DashboardView />}
@@ -1084,4 +1084,4 @@ const rootElement = document.getElementById('root');
 if (rootElement) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(<React.StrictMode><App /></React.StrictMode>);
-                        }
+                                             }
