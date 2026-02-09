@@ -104,4 +104,5 @@ export interface ProductionOrder {
   Peso_Real_g?: number;
 }
 
-export type ViewMode = 'dashboard' | 'filaments' | 'clients' | 'calculator' | 'quotes' | 'extract';
+// FIX: Ensure 'production' is explicitly included to avoid TS2367
+export type ViewMode = 'dashboard' | 'filaments' | 'clients' | 'calculator' | 'quotes' | 'extract' | 'production';
