@@ -19,10 +19,6 @@ import { DEFAULT_SETTINGS } from './constants';
 // Threshold percentage for low stock alert
 const LOW_STOCK_THRESHOLD = 15;
 
-// URL Logos
-const LOGO_LIGHT = "https://raw.githubusercontent.com/bra83/lootnivel40/5b4cc708c07db4ba85cf89743e2b70fd73a704ef/logo-light.png";
-const LOGO_DARK = "https://raw.githubusercontent.com/bra83/lootnivel40/5b4cc708c07db4ba85cf89743e2b70fd73a704ef/logo-dark.png";
-
 // --- APP COMPONENT ---
 
 function App() {
@@ -30,6 +26,9 @@ function App() {
     const [theme, setTheme] = useState<'light' | 'dark'>(() => {
         return (localStorage.getItem('nonobit_theme') as 'light' | 'dark') || 'light';
     });
+
+    // PWA Install Prompt State
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
     // State Management
     const [view, setView] = useState<ViewMode>('dashboard');
@@ -60,10 +59,39 @@ function App() {
 
     // --- EFFECTS ---
     
+    // PWA Install Listener
+    useEffect(() => {
+        const handler = (e: any) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handler);
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    const handleInstallClick = () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult: any) => {
+                if (choiceResult.outcome === 'accepted') {
+                    setDeferredPrompt(null);
+                }
+            });
+        } else {
+            // Se o prompt nÃ£o estiver disponÃ­vel (ex: iOS ou jÃ¡ instalado/rejeitado), mostra instruÃ§Ã£o
+            showToast("Para instalar: Toque em 'Compartilhar' > 'Adicionar Ã  Tela de InÃ­cio'", "info");
+        }
+    };
+
     // Apply Theme
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('nonobit_theme', theme);
+        // Atualiza meta tag theme-color para mobile
+        const metaThemeColor = document.querySelector("meta[name=theme-color]");
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute("content", theme === 'dark' ? '#212529' : '#EFEEEE');
+        }
     }, [theme]);
 
     const toggleTheme = () => {
@@ -78,7 +106,7 @@ function App() {
 
         const approvedQuotes = quotes.filter(q => q.status === 'approved');
 
-        // Receita Total (Lifetime) e Mensal - Usar netValue se disponível (Receita Real), senão finalPrice
+        // Receita Total (Lifetime) e Mensal - Usar netValue se disponÃ­vel (Receita Real), senÃ£o finalPrice
         const revenueTotal = approvedQuotes.reduce((acc, q) => acc + (q.netValue || q.finalPrice), 0);
         
         const revenueMonth = approvedQuotes
@@ -94,7 +122,7 @@ function App() {
         // Custo estimado dos produtos vendidos
         const costOfGoodsSold = approvedQuotes.reduce((acc, q) => acc + q.totalCost, 0);
 
-        // Lucro Estimado (Receita Líquida - Custo Produção)
+        // Lucro Estimado (Receita LÃ­quida - Custo ProduÃ§Ã£o)
         const estimatedProfit = revenueTotal - costOfGoodsSold;
 
         return {
@@ -111,9 +139,9 @@ function App() {
         const pending = quotes.filter(q => q.status === 'pending').length;
         const approved = quotes.filter(q => q.status === 'approved').length;
         const productionPending = productionOrders.length > 0 
-            ? productionOrders.filter(p => p.Status !== 'Concluída').length 
+            ? productionOrders.filter(p => p.Status !== 'ConcluÃ­da').length 
             : approved;
-        const productionDone = productionOrders.filter(p => p.Status === 'Concluída').length;
+        const productionDone = productionOrders.filter(p => p.Status === 'ConcluÃ­da').length;
 
         return { draft, pending, approved, productionPending, productionDone };
     }, [quotes, productionOrders]);
@@ -157,7 +185,7 @@ function App() {
         });
     };
 
-    // --- BACKUP AUTOMÁTICO (OFFLINE SUPPORT) ---
+    // --- BACKUP AUTOMÃTICO (OFFLINE SUPPORT) ---
     useEffect(() => {
         localStorage.setItem('nonobit_quotes_backup', JSON.stringify(quotes));
     }, [quotes]);
@@ -213,12 +241,12 @@ function App() {
             setSettings(conf);
 
             if(fils.length === 0 && clis.length === 0 && quotesCloud.length === 0) {
-                 showToast("Não foi possível conectar ao servidor. Verifique a URL do App Script ou sua internet.", "warning");
+                 showToast("NÃ£o foi possÃ­vel conectar ao servidor. Verifique a URL do App Script ou sua internet.", "warning");
             }
 
         } catch (error) {
             console.error("Critical Failure in loadData", error);
-            showToast("Erro crítico ao carregar dados.", "error");
+            showToast("Erro crÃ­tico ao carregar dados.", "error");
         } finally {
             setLoading(false);
         }
@@ -253,9 +281,9 @@ function App() {
 
     const handleDeleteFilament = (id: string) => {
         if (!id) return;
-        confirmAction("Excluir Filamento?", "Esta ação irá mover o filamento para o arquivo morto.", async () => {
+        confirmAction("Excluir Filamento?", "Esta aÃ§Ã£o irÃ¡ mover o filamento para o arquivo morto.", async () => {
             setFilaments(prev => prev.filter(f => f.id !== id));
-            try { await api.deleteFilament(id); showToast("Filamento excluído.", "success"); } 
+            try { await api.deleteFilament(id); showToast("Filamento excluÃ­do.", "success"); } 
             catch (err: any) { showToast("Erro API.", "error"); }
         });
     };
@@ -288,14 +316,14 @@ function App() {
         try {
             const clientName = clients.find(c => c.id === quoteData.clientId)?.name;
             await api.saveQuote(quoteData, clientName);
-            showToast("Orçamento salvo!", "success");
+            showToast("OrÃ§amento salvo!", "success");
         } catch (err: any) { showToast("Erro ao salvar.", "error"); } 
         finally { setLoading(false); }
     };
     
     const handleDeleteQuote = (id: string) => {
         if (!id) return;
-        confirmAction("Excluir Orçamento?", "Ação irreversível.", async () => {
+        confirmAction("Excluir OrÃ§amento?", "AÃ§Ã£o irreversÃ­vel.", async () => {
             setQuotes(prev => prev.filter(q => q.id !== id));
             try { await api.deleteQuote(id); showToast("Removido.", "success"); } 
             catch (err: any) { showToast("Erro API.", "error"); }
@@ -337,7 +365,7 @@ function App() {
     const handleApproveQuote = async (quoteId: string) => {
         const quote = quotes.find(q => q.id === quoteId);
         if(!quote || quote.status === 'approved') return;
-        confirmAction("Aprovar Venda?", `Confirmar venda de ${formatCurrency(quote.netValue || quote.finalPrice)} (Líquido)?`, async () => {
+        confirmAction("Aprovar Venda?", `Confirmar venda de ${formatCurrency(quote.netValue || quote.finalPrice)} (LÃ­quido)?`, async () => {
                 setLoading(true);
                 const client = clients.find(c => c.id === quote.clientId);
                 // 1. Deduct Stock Locally
@@ -367,7 +395,7 @@ function App() {
 
     const handleSaveSettings = async () => {
         setLoading(true);
-        try { await api.saveConfig(settings); showToast("Configurações salvas!", "success"); } 
+        try { await api.saveConfig(settings); showToast("ConfiguraÃ§Ãµes salvas!", "success"); } 
         catch (err) { showToast("Erro ao salvar.", "error"); } 
         finally { setLoading(false); }
     }
@@ -375,7 +403,7 @@ function App() {
     const handleWhatsapp = (quote: Quote) => {
         const client = clients.find(c => c.id === quote.clientId);
         if(!client) return;
-        const message = `Olá ${client.name}, segue orçamento:\nTotal: ${formatCurrency(quote.finalPrice)}`;
+        const message = `OlÃ¡ ${client.name}, segue orÃ§amento:\nTotal: ${formatCurrency(quote.finalPrice)}`;
         window.open(`https://wa.me/${client.phone.replace(/\D/g,'')}?text=${encodeURIComponent(message)}`, '_blank');
     };
 
@@ -421,7 +449,8 @@ function App() {
                 <div className="kpi-grid" style={{marginBottom: 24}}>
                     <div className="neu-card" style={{padding: 15}}>
                         <div style={{display:'flex', alignItems:'center', gap: 8, color: 'var(--text-light)', marginBottom: 5}}>
-                            <span style={{fontSize: '1.2rem'}}>🛒</span>
+                            {/* SVG Icon instead of Emoji */}
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                             <span style={{fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase'}}>Pedidos</span>
                         </div>
                         <p style={{fontSize: '1.5rem', fontWeight: 800, margin: 0}}>{funnelData.approved}</p>
@@ -429,15 +458,15 @@ function App() {
 
                     <div className="neu-card" style={{padding: 15}}>
                          <div style={{display:'flex', alignItems:'center', gap: 8, color: 'var(--text-light)', marginBottom: 5}}>
-                            <span style={{fontSize: '1.2rem'}}>💰</span>
-                            <span style={{fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase'}}>Faturamento Líq.</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            <span style={{fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase'}}>Faturamento LÃ­q.</span>
                         </div>
                         <p style={{fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--accent)'}}>{formatCurrency(dashboardSummary.receitaTotal)}</p>
                     </div>
 
                     <div className="neu-card" style={{padding: 15}}>
                          <div style={{display:'flex', alignItems:'center', gap: 8, color: 'var(--text-light)', marginBottom: 5}}>
-                            <span style={{fontSize: '1.2rem'}}>📉</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
                             <span style={{fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase'}}>Despesas</span>
                         </div>
                         <p style={{fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--danger)'}}>{formatCurrency(dashboardSummary.despesasTotal)}</p>
@@ -445,7 +474,7 @@ function App() {
 
                      <div className="neu-card" style={{padding: 15}}>
                          <div style={{display:'flex', alignItems:'center', gap: 8, color: 'var(--text-light)', marginBottom: 5}}>
-                            <span style={{fontSize: '1.2rem'}}>💎</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l9 4.9V17L12 22l-9-4.9V6.9L12 2z"></path></svg>
                             <span style={{fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase'}}>Lucro Real</span>
                         </div>
                         <p style={{fontSize: '1.5rem', fontWeight: 800, margin: 0, color: dashboardSummary.lucroEstimado >= 0 ? 'var(--accent)' : 'var(--danger)'}}>
@@ -456,12 +485,12 @@ function App() {
 
                 <div className="grid-cards" style={{gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24}}>
                     
-                    {/* 2. COLUNA ESQUERDA: Produção e Estoque */}
+                    {/* 2. COLUNA ESQUERDA: ProduÃ§Ã£o e Estoque */}
                     <div style={{display:'flex', flexDirection:'column', gap: 24}}>
                          {/* CANAIS DE VENDA */}
                          <div className="neu-card">
                             <h3 style={{fontSize: '0.9rem', color: 'var(--text-light)', textTransform: 'uppercase', marginBottom: 15}}>
-                                🌐 Canais de Venda
+                                ðŸŒ Canais de Venda
                             </h3>
                             <div style={{display:'flex', alignItems:'center', gap: 20}}>
                                 {/* Donut Chart */}
@@ -472,7 +501,7 @@ function App() {
                                     {channelStats.map(([channel, data]) => (
                                         <div key={channel} style={{display:'flex', justifyContent:'space-between', fontSize:'0.8rem', marginBottom: 4, borderBottom:'1px solid rgba(0,0,0,0.05)'}}>
                                             <span style={{fontWeight: 700}}>{channel}</span>
-                                            <span>{data.count} un • {formatCurrency(data.revenue)}</span>
+                                            <span>{data.count} un â€¢ {formatCurrency(data.revenue)}</span>
                                         </div>
                                     ))}
                                     {channelStats.length === 0 && <small>Sem vendas aprovadas.</small>}
@@ -480,14 +509,14 @@ function App() {
                             </div>
                         </div>
 
-                        {/* STATUS DE PRODUÇÃO */}
+                        {/* STATUS DE PRODUÃ‡ÃƒO */}
                         <div className="neu-card">
                             <h3 style={{fontSize: '0.9rem', color: 'var(--text-light)', textTransform: 'uppercase', marginBottom: 15}}>
-                                🏭 Fila de Produção
+                                ðŸ­ Fila de ProduÃ§Ã£o
                             </h3>
                             {productionItems.length === 0 ? (
                                 <div style={{textAlign:'center', padding: 20, opacity: 0.6}}>
-                                    <p>Nenhuma ordem de produção.</p>
+                                    <p>Nenhuma ordem de produÃ§Ã£o.</p>
                                 </div>
                             ) : (
                                 <div style={{display:'flex', flexDirection:'column', gap: 10}}>
@@ -497,7 +526,7 @@ function App() {
                                                 <div style={{fontWeight: 700, fontSize:'0.9rem'}}>OP #{op.ID_OP.split('-')[1] || op.ID_OP}</div>
                                                 <div style={{fontSize:'0.75rem', color: 'var(--text-light)'}}>Ref: Pedido {op.ID_Pedido}</div>
                                             </div>
-                                            <span className={`status ${op.Status === 'Concluída' ? 'approved' : 'pending'}`}>
+                                            <span className={`status ${op.Status === 'ConcluÃ­da' ? 'approved' : 'pending'}`}>
                                                 {op.Status}
                                             </span>
                                         </div>
@@ -507,12 +536,12 @@ function App() {
                         </div>
                     </div>
 
-                    {/* 3. COLUNA DIREITA: Funil e Gráficos */}
+                    {/* 3. COLUNA DIREITA: Funil e GrÃ¡ficos */}
                     <div style={{display:'flex', flexDirection:'column', gap: 24}}>
                         {/* FUNIL DE VENDAS */}
                         <div className="neu-card">
                             <h3 style={{fontSize: '0.9rem', color: 'var(--text-light)', textTransform: 'uppercase', marginBottom: 20}}>
-                                🎯 Funil de Vendas
+                                ðŸŽ¯ Funil de Vendas
                             </h3>
                             <div style={{display:'flex', flexDirection:'column', gap: 12}}>
                                 <div style={{display:'flex', alignItems:'center', gap: 10}}>
@@ -539,7 +568,7 @@ function App() {
                             </div>
                         </div>
 
-                         {/* FLUXO DE CAIXA (Gráfico) */}
+                         {/* FLUXO DE CAIXA (GrÃ¡fico) */}
                         <WeeklyChart quotes={quotes} expenses={expenses} />
 
                     </div>
@@ -559,7 +588,7 @@ function App() {
             </div>
             <div className="grid-cards">
                 {filaments.length === 0 && !loading && (
-                    <div className="neu-card" style={{textAlign:'center', gridColumn: '1 / -1'}}>Nenhum filamento encontrado. Verifique a conexão.</div>
+                    <div className="neu-card" style={{textAlign:'center', gridColumn: '1 / -1'}}>Nenhum filamento encontrado. Verifique a conexÃ£o.</div>
                 )}
                 {filaments.map(f => (
                     <FilamentSpool 
@@ -585,7 +614,7 @@ function App() {
             <div className="table-container">
                 <table>
                     <thead>
-                        <tr><th>Nome</th><th>Ações</th></tr>
+                        <tr><th>Nome</th><th>AÃ§Ãµes</th></tr>
                     </thead>
                     <tbody>
                          {clients.length === 0 && !loading && (
@@ -607,6 +636,141 @@ function App() {
             </div>
         </div>
     );
+    
+    const QuotesView = () => {
+        const getClientName = (id: string) => clients.find(c => c.id === id)?.name || 'Desconhecido';
+        const sortedQuotes = [...quotes].sort((a, b) => b.createdAt - a.createdAt);
+
+        return (
+            <div className="view-container">
+                <div className="view-header">
+                    <h1>OrÃ§amentos</h1>
+                    <div style={{display:'flex', gap: 10}}>
+                        {loading && <span className="status pending">Carregando...</span>}
+                        <button className="fab-button" onClick={() => { setEditingId(null); setDrawerType('quote'); setDrawerOpen(true); }}>+</button>
+                    </div>
+                </div>
+                <div className="grid-cards">
+                    {sortedQuotes.length === 0 && !loading && (
+                        <div className="neu-card" style={{textAlign:'center', gridColumn: '1 / -1'}}>Nenhum orÃ§amento encontrado.</div>
+                    )}
+                    {sortedQuotes.map(q => (
+                        <div key={q.id} className="neu-card" style={{position:'relative'}}>
+                            <div style={{display:'flex', justifyContent:'space-between', marginBottom: 10}}>
+                                <span className={`status ${q.status}`}>{q.status}</span>
+                                <span style={{fontSize: '0.75rem', color: 'var(--text-light)'}}>{formatDate(q.createdAt)}</span>
+                            </div>
+                            <h3 style={{marginBottom: 5}}>{getClientName(q.clientId)}</h3>
+                            
+                            <div style={{fontSize:'1.5rem', fontWeight: 800, margin: '10px 0', color: 'var(--accent)'}}>
+                                {formatCurrency(q.finalPrice)}
+                            </div>
+                            
+                            <div style={{display:'flex', gap: 10, fontSize: '0.8rem', color: 'var(--text-light)', marginBottom: 15}}>
+                                <span>{q.items.length} item(s)</span>
+                                <span>â€¢</span>
+                                <span>{q.channel || 'Direto'}</span>
+                            </div>
+                            
+                            <div className="card-actions" style={{display:'flex', gap: 8}}>
+                                <button className="neu-btn" style={{flex:1}} onClick={() => { setEditingId(q.id); setDrawerType('quote'); setDrawerOpen(true); }}>Editar</button>
+                                <button className="neu-btn" title="Enviar WhatsApp" onClick={() => handleWhatsapp(q)}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                </button>
+                                {q.status !== 'approved' && (
+                                    <button className="neu-btn primary" title="Aprovar Venda" onClick={() => handleApproveQuote(q.id)}>âœ“</button>
+                                )}
+                                <button className="neu-btn danger" title="Excluir" onClick={() => handleDeleteQuote(q.id)}>âœ•</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    const ExtractView = () => {
+        const sortedExpenses = [...expenses].sort((a, b) => b.date - a.date);
+
+        return (
+            <div className="view-container">
+                <div className="view-header">
+                    <h1>Extrato Financeiro</h1>
+                    <div style={{display:'flex', gap: 10}}>
+                         {loading && <span className="status pending">Carregando...</span>}
+                         <button className="fab-button" onClick={() => { setEditingId(null); setDrawerType('expense'); setDrawerOpen(true); }}>+</button>
+                    </div>
+                </div>
+                <div className="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>DescriÃ§Ã£o / Categoria</th>
+                                <th style={{textAlign: 'right'}}>Valor</th>
+                                <th style={{textAlign: 'center'}}>AÃ§Ãµes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sortedExpenses.length === 0 && !loading && (
+                                <tr><td colSpan={4} style={{textAlign:'center', padding: 20}}>Nenhuma despesa registrada.</td></tr>
+                            )}
+                            {sortedExpenses.map(e => (
+                                <tr key={e.id}>
+                                    <td style={{fontSize:'0.85rem'}}>{formatDate(e.date)}</td>
+                                    <td>
+                                        <div style={{fontWeight:'bold'}}>{e.description}</div>
+                                        <span className="badge-tag">{e.category}</span>
+                                        {e.isFixed && <span className="badge-tag" style={{marginLeft: 5, background: 'var(--accent)', color: '#fff'}}>Fixo</span>}
+                                    </td>
+                                    <td style={{textAlign: 'right', fontWeight: 700, color: 'var(--danger)'}}>
+                                        - {formatCurrency(e.amount)}
+                                    </td>
+                                    <td style={{textAlign: 'center'}}>
+                                         <div style={{display:'flex', gap: 5, justifyContent:'center'}}>
+                                            <button className="mini-btn" onClick={() => { setEditingId(e.id); setDrawerType('expense'); setDrawerOpen(true); }}>âœŽ</button>
+                                            <button className="mini-btn danger" onClick={() => handleDeleteExpense(e.id)}>âœ•</button>
+                                         </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+    };
+
+    const ProductionView = () => {
+        return (
+            <div className="view-container">
+                <div className="view-header">
+                    <h1>Ordens de ProduÃ§Ã£o</h1>
+                    {loading && <span className="status pending">Atualizando...</span>}
+                </div>
+                {productionOrders.length === 0 && !loading ? (
+                    <div className="neu-card" style={{textAlign:'center', padding: 30}}>Nenhuma ordem de produÃ§Ã£o ativa.</div>
+                ) : (
+                    <div className="grid-cards">
+                        {productionOrders.map((op, i) => (
+                             <div key={i} className="neu-card">
+                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 10}}>
+                                    <h3 style={{margin:0}}>OP #{op.ID_OP.split('-')[1] || op.ID_OP}</h3>
+                                    <span className={`status ${op.Status === 'ConcluÃ­da' ? 'approved' : 'pending'}`}>{op.Status}</span>
+                                </div>
+                                <p style={{color: 'var(--text-light)', margin: '5px 0'}}>Pedido ReferÃªncia: <strong>{op.ID_Pedido}</strong></p>
+                                {op.Peso_Real_g ? (
+                                    <p style={{margin: '5px 0'}}>Peso Real: <strong>{op.Peso_Real_g}g</strong></p>
+                                ) : (
+                                    <p style={{margin: '5px 0', color: 'var(--text-light)', fontSize: '0.8rem'}}>Peso ainda nÃ£o registrado</p>
+                                )}
+                             </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     const SettingsView = () => {
         const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -623,26 +787,40 @@ function App() {
         return (
             <div className="view-container">
                 <div className="view-header">
-                     <h1>Configuração</h1>
+                     <h1>ConfiguraÃ§Ã£o</h1>
                      <button className="neu-btn primary" onClick={handleSaveSettings} disabled={loading}>Salvar Nuvem</button>
                 </div>
+                
+                {/* PWA INSTALL BUTTON - ALWAYS VISIBLE */}
+                <div className="neu-card" style={{marginBottom: 20, textAlign: 'center', background: 'rgba(212, 175, 55, 0.1)', border: '1px solid var(--accent)'}}>
+                    <h3 style={{fontSize: '0.9rem', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 10}}>Instalar Aplicativo</h3>
+                    <p style={{fontSize: '0.9rem', marginBottom: 15}}>Instale o DungeonERP no seu celular para acesso rÃ¡pido e modo tela cheia.</p>
+                    <button 
+                        className="neu-btn primary" 
+                        style={{width: '100%', padding: 12}} 
+                        onClick={handleInstallClick}
+                    >
+                        {deferredPrompt ? 'Instalar Agora' : 'Como Instalar?'}
+                    </button>
+                </div>
+
                 <div className="neu-card" style={{marginBottom: 20, textAlign: 'center'}}>
                     <h3 style={{fontSize: '0.8rem', color: 'var(--text-light)', textTransform: 'uppercase', marginBottom: 5}}>Custo Total da Hora</h3>
                     <p style={{fontSize: '1.8rem', fontWeight: 800, margin: 0}}>{formatCurrency(hourlyCost)}</p>
-                    <small style={{fontSize: '0.7rem', color: 'var(--text-light)'}}>Soma de Fixo, Energia, Máquina e Mão de Obra</small>
+                    <small style={{fontSize: '0.7rem', color: 'var(--text-light)'}}>Soma de Fixo, Energia, MÃ¡quina e MÃ£o de Obra</small>
                 </div>
                 <div className="neu-card">
                     <h3 style={{marginTop:0, marginBottom: 20, fontSize: '0.9rem', color:'var(--text-light)', textTransform:'uppercase'}}>Custos Operacionais</h3>
                     <div className="erp-form two-col">
                         <div className="form-group">
-                            <label>Despesas Fixas (R$/mês)</label>
+                            <label>Despesas Fixas (R$/mÃªs)</label>
                             <input className="neu-input" type="number" name="monthlyFixedExpenses" value={settings.monthlyFixedExpenses} onChange={handleChange} />
                             {currentMonthTotalFixed > 0 && currentMonthTotalFixed !== settings.monthlyFixedExpenses && (
                                 <button className="neu-btn" style={{fontSize:'0.7rem', padding: '4px 8px', marginTop: 4}} onClick={updateFixedExpenses}>Usar valor calculado: {formatCurrency(currentMonthTotalFixed)}</button>
                             )}
                         </div>
                         <div className="form-group">
-                            <label>Horas Trab./Mês</label>
+                            <label>Horas Trab./MÃªs</label>
                             <input className="neu-input" type="number" name="workHoursPerMonth" value={settings.workHoursPerMonth} onChange={handleChange} />
                         </div>
                         <div className="form-group">
@@ -650,25 +828,25 @@ function App() {
                             <input className="neu-input" type="number" step="0.01" name="energyCostPerKwh" value={settings.energyCostPerKwh} onChange={handleChange} />
                         </div>
                         <div className="form-group">
-                            <label>Potência Impressora (W)</label>
+                            <label>PotÃªncia Impressora (W)</label>
                             <input className="neu-input" type="number" name="printerPowerWatts" value={settings.printerPowerWatts} onChange={handleChange} />
                         </div>
                          <div className="form-group" style={{gridColumn: '1 / -1', border: '1px solid rgba(125,125,125,0.1)', padding: 10, borderRadius: 12}}>
-                            <label style={{color: 'var(--text-main)', marginBottom: 10, display: 'block'}}>Máquina / Depreciação</label>
+                            <label style={{color: 'var(--text-main)', marginBottom: 10, display: 'block'}}>MÃ¡quina / DepreciaÃ§Ã£o</label>
                             <div className="two-col">
                                 <div>
-                                    <label style={{fontSize: '0.7rem'}}>Valor Máquina (R$)</label>
+                                    <label style={{fontSize: '0.7rem'}}>Valor MÃ¡quina (R$)</label>
                                     <input className="neu-input" type="number" name="machineValue" value={settings.machineValue} onChange={handleChange} />
                                 </div>
                                 <div>
-                                    <label style={{fontSize: '0.7rem'}}>Vida Útil (Horas)</label>
+                                    <label style={{fontSize: '0.7rem'}}>Vida Ãštil (Horas)</label>
                                     <input className="neu-input" type="number" name="machineLifespanHours" value={settings.machineLifespanHours} onChange={handleChange} />
                                 </div>
                             </div>
                             <small style={{display:'block', marginTop:5, fontSize:'0.75rem', color: 'var(--accent)', fontWeight: 700}}>Custo Calculado: {formatCurrency(machineDepreciation)} / hora</small>
                         </div>
                          <div className="form-group" style={{border: '1px solid var(--accent)', padding: 10, borderRadius: 12, background: 'rgba(212, 175, 55, 0.05)'}}>
-                            <label style={{color: 'var(--accent)'}}>Mão de Obra Máquina (R$/h)</label>
+                            <label style={{color: 'var(--accent)'}}>MÃ£o de Obra MÃ¡quina (R$/h)</label>
                             <input className="neu-input" type="number" name="laborRatePerHour" value={settings.laborRatePerHour} onChange={handleChange} />
                         </div>
                     </div>
@@ -679,123 +857,12 @@ function App() {
                             <input className="neu-input" type="number" name="failureRatePercent" value={settings.failureRatePercent} onChange={handleChange} />
                         </div>
                         <div className="form-group">
-                            <label>Desperdício Mat. (%)</label>
+                            <label>DesperdÃ­cio Mat. (%)</label>
                             <input className="neu-input" type="number" name="materialWastePercent" value={settings.materialWastePercent || 5} onChange={handleChange} placeholder="Suportes, Poop, Flush" />
                         </div>
                     </div>
                 </div>
             </div>
-        );
-    };
-
-    const QuotesView = () => (
-         <div className="view-container">
-            <div className="view-header">
-                <h1>Orçamentos</h1>
-                <button className="fab-button" onClick={() => { setEditingId(null); setDrawerType('quote'); setDrawerOpen(true); }}>+</button>
-            </div>
-            <div className="table-container">
-                <table>
-                    <tbody>
-                        {quotes.map(q => {
-                            const client = clients.find(c => c.id === q.clientId);
-                            const statusLabel = q.status === 'approved' ? 'Vendido' : q.status === 'pending' ? 'Pendente' : q.status === 'rejected' ? 'Rejeitado' : 'Rascunho';
-                            // Show Channel Icon
-                            let chIcon = "🏠";
-                            if(q.channel === 'MercadoLivre') chIcon = "📦";
-                            if(q.channel === 'Shopee') chIcon = "🛍️";
-                            if(q.channel === 'Amazon') chIcon = "🅰️";
-
-                            return (
-                                <tr key={q.id}>
-                                    <td>
-                                        <div style={{fontWeight:'bold'}}>{client?.name || 'Cliente Removido'}</div>
-                                        <div style={{fontSize:'0.75rem', color:'var(--text-light)'}}>{formatDate(q.createdAt)} • {chIcon}</div>
-                                    </td>
-                                    <td>
-                                        <div style={{fontWeight:'800', textAlign:'right'}}>{formatCurrency(q.netValue || q.finalPrice)}</div>
-                                        <div style={{textAlign:'right', fontSize:'0.7rem', color: 'var(--text-light)'}}>Líquido</div>
-                                    </td>
-                                    <td style={{display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap'}}>
-                                        <button className="neu-btn" style={{padding:8}} onClick={() => { setEditingId(q.id); setDrawerType('quote'); setDrawerOpen(true); }} title="Editar">✏️</button>
-                                        <button className="neu-btn danger" style={{padding:8}} onClick={() => handleDeleteQuote(q.id)} title="Excluir">🗑️</button>
-                                        <button className="neu-btn" style={{padding:8}} onClick={() => handleWhatsapp(q)} title="Whatsapp">💬</button>
-                                        {q.status !== 'approved' && (
-                                            <button className="neu-btn primary" style={{padding:8}} onClick={() => handleApproveQuote(q.id)} disabled={loading} title="Vender">OK</button>
-                                        )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-
-     const ExtractView = () => {
-         const movements = useMemo(() => {
-             const sales = quotes.filter(q => q.status === 'approved').map(q => ({
-                     id: q.id, type: 'sale', description: `Venda ${clients.find(c => c.id === q.clientId)?.name || ''}`, amount: q.netValue || q.finalPrice, date: q.createdAt, category: 'venda', data: q
-                 }));
-             const exps = expenses.map(e => ({
-                 id: e.id, type: 'expense', description: e.description, amount: e.amount, date: e.date, category: e.category, data: e
-             }));
-             return [...sales, ...exps].sort((a, b) => b.date - a.date);
-         }, [quotes, expenses, clients]);
-         const balance = movements.reduce((acc, curr) => acc + (curr.type === 'sale' ? curr.amount : -curr.amount), 0);
-
-         return (
-         <div className="view-container">
-            <div className="view-header">
-                <h1>Extrato</h1>
-                <div style={{display:'flex', gap: 10}}>
-                     {loading && <span className="status pending">Carregando...</span>}
-                     <button className="fab-button" onClick={() => { setEditingId(null); setDrawerType('expense'); setDrawerOpen(true); }}>+</button>
-                </div>
-            </div>
-            <div className="neu-card" style={{marginBottom: 20, textAlign: 'center', background: balance >= 0 ? 'rgba(212, 175, 55, 0.05)' : 'rgba(239, 68, 68, 0.05)'}}>
-                 <h3 style={{fontSize: '0.8rem', color: 'var(--text-light)', textTransform: 'uppercase', marginBottom: 5}}>Saldo Atual</h3>
-                 <p style={{fontSize: '2rem', fontWeight: 800, margin: 0, color: balance >= 0 ? 'var(--accent)' : 'var(--danger)'}}>{formatCurrency(balance)}</p>
-            </div>
-            <div className="grid-cards" style={{gridTemplateColumns: '1fr'}}>
-                 {movements.map((m: any) => (
-                     <div key={`${m.type}-${m.id}`} className="neu-card" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                         <div style={{display:'flex', alignItems:'center', gap: 16}}>
-                             <div style={{fontSize:'1.5rem', background:'var(--bg)', boxShadow:'var(--neu-out)', borderRadius:'50%', width:50, height:50, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                                 {m.category === 'venda' ? '💰' : '🔧'}
-                             </div>
-                             <div>
-                                 <h3 style={{margin:0, fontSize:'1rem'}}>{m.description}</h3>
-                                 <span style={{fontSize:'0.75rem', color:'var(--text-light)', textTransform: 'capitalize'}}>{m.category} • {formatDate(m.date)}</span>
-                             </div>
-                         </div>
-                         <div style={{textAlign:'right'}}>
-                             <div style={{fontWeight:800, fontSize:'1.1rem', color: m.type === 'sale' ? 'var(--accent)' : 'var(--danger)'}}>
-                                 {m.type === 'sale' ? '+' : '-'}{formatCurrency(m.amount)}
-                             </div>
-                         </div>
-                     </div>
-                 ))}
-            </div>
-        </div>
-    )};
-
-    // --- FORM DRAWERS ---
-    const ExpenseForm = () => {
-        const initial = (expenses.find(e => e.id === editingId) || {}) as Partial<Expense>;
-        const initialDate = initial.date ? new Date(initial.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-        return (
-            <form className="erp-form" onSubmit={handleSaveExpense}>
-                <div className="form-group"><label>Descrição</label><input className="neu-input" name="description" defaultValue={initial.description} required /></div>
-                <div className="two-col">
-                    <div className="form-group"><label>Categoria</label><select className="neu-input" name="category" defaultValue={initial.category || 'outros'}><option value="filamento">Filamento</option><option value="ferramenta">Ferramentas</option><option value="manutencao">Manutenção</option><option value="energia">Energia</option><option value="fixo">Custo Fixo</option><option value="outros">Outros</option></select></div>
-                    <div className="form-group"><label>Valor</label><input className="neu-input" type="number" step="0.01" name="amount" defaultValue={initial.amount} required /></div>
-                </div>
-                <div className="form-group"><label>Data</label><input className="neu-input" type="date" name="date" defaultValue={initialDate} required /></div>
-                <div className="form-group" style={{display: 'flex', alignItems: 'center', gap: 10}}><input type="checkbox" name="isFixed" defaultChecked={initial.isFixed} style={{width: 20, height: 20}} /><label>Despesa fixa?</label></div>
-                <div className="drawer-footer"><button type="submit" className="neu-btn btn-save" disabled={loading}>Salvar</button><button type="button" className="neu-btn btn-cancel" onClick={() => setDrawerOpen(false)}>Cancelar</button></div>
-            </form>
         );
     };
 
@@ -856,7 +923,7 @@ function App() {
                 {items.map((item, idx) => (
                     <div key={item.id} className="neu-card" style={{marginBottom: 10, padding: 15, position: 'relative'}}>
                         <button type="button" className="neu-btn danger" style={{position: 'absolute', right: 5, top: 5, width: 24, height: 24, padding: 0}} onClick={() => deleteItem(idx)}>&times;</button>
-                        <div className="two-col"><div className="form-group"><label>Descrição</label><input className="neu-input" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} /></div><div className="form-group"><label>Tempo (h)</label><input className="neu-input" type="number" value={item.printTimeHours} onChange={e => updateItem(idx, 'printTimeHours', parseFloat(e.target.value))} /></div></div>
+                        <div className="two-col"><div className="form-group"><label>DescriÃ§Ã£o</label><input className="neu-input" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} /></div><div className="form-group"><label>Tempo (h)</label><input className="neu-input" type="number" value={item.printTimeHours} onChange={e => updateItem(idx, 'printTimeHours', parseFloat(e.target.value))} /></div></div>
                         <div style={{marginTop: 10, padding: 10, background: 'rgba(0,0,0,0.03)', borderRadius: 10}}>
                              <div style={{display: 'flex', justifyContent: 'space-between'}}>
                                 <label>Filamentos</label><button type="button" className="neu-btn primary" onClick={() => addFilamentToItem(idx)} style={{padding: '2px 8px', fontSize: '0.7rem'}}>+ Cor</button>
@@ -872,23 +939,35 @@ function App() {
                     </div>
                 ))}
                 
-                <div className="form-group"><label>Margem Líquida Desejada (%)</label><input className="neu-input" type="number" value={margin} onChange={e => setMargin(parseFloat(e.target.value))} /></div>
+                <div className="form-group"><label>Margem LÃ­quida Desejada (%)</label><input className="neu-input" type="number" value={margin} onChange={e => setMargin(parseFloat(e.target.value))} /></div>
                 
                 <div className="kpi-card" style={{marginTop: 20}}>
-                    <h3>Preço Sugerido ({channel})</h3>
+                    <h3>PreÃ§o Sugerido ({channel})</h3>
                     <p className="value">{formatCurrency(calc.finalPrice)}</p>
                     
                     <div style={{width: '100%', marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4}}>
-                         <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem'}}>
-                            <span style={{color: 'var(--text-light)'}}>Custo Produção:</span>
-                            <span>{formatCurrency(calc.totalCost)}</span>
+                         <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', paddingBottom: 5, borderBottom: '1px solid rgba(125,125,125,0.1)'}}>
+                            <span style={{color: 'var(--text-light)'}}>Custo ProduÃ§Ã£o:</span>
+                            <span style={{fontWeight: 700}}>{formatCurrency(calc.totalCost)}</span>
                          </div>
+                         
+                         {/* Detalhamento de Custo */}
+                         {calc.breakdown && (
+                             <div style={{fontSize: '0.7rem', color: 'var(--text-light)', paddingLeft: 10, display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 5}}>
+                                 <div style={{display:'flex', justifyContent:'space-between'}}><span>Material:</span><span>{formatCurrency(calc.breakdown.material)}</span></div>
+                                 <div style={{display:'flex', justifyContent:'space-between'}}><span>Energia:</span><span>{formatCurrency(calc.breakdown.energy)}</span></div>
+                                 <div style={{display:'flex', justifyContent:'space-between'}}><span>DepreciaÃ§Ã£o:</span><span>{formatCurrency(calc.breakdown.depreciation)}</span></div>
+                                 <div style={{display:'flex', justifyContent:'space-between'}}><span>Fixo + MO:</span><span>{formatCurrency(calc.breakdown.fixed + calc.breakdown.labor)}</span></div>
+                                 <div style={{display:'flex', justifyContent:'space-between'}}><span>Risco/Perda:</span><span>{formatCurrency(calc.breakdown.risk)}</span></div>
+                             </div>
+                         )}
+
                          <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem'}}>
                             <span style={{color: 'var(--text-light)'}}>Taxas ({channel}):</span>
                             <span style={{color: 'var(--danger)'}}>- {formatCurrency(calc.taxAmount)}</span>
                          </div>
                          <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: 700, borderTop: '1px solid rgba(125,125,125,0.1)', paddingTop: 4}}>
-                            <span>Líquido (Você Recebe):</span>
+                            <span>LÃ­quido (VocÃª Recebe):</span>
                             <span style={{color: 'var(--accent)'}}>{formatCurrency(calc.netValue)}</span>
                          </div>
                          <small style={{fontSize:'0.7rem', color: 'var(--text-light)', marginTop: 4, textAlign: 'right'}}>
@@ -910,7 +989,7 @@ function App() {
                 <div className="form-group"><label>Marca</label><input className="neu-input" name="brand" defaultValue={initial.brand} required /></div>
                 <div className="form-group"><label>Nome / Cor</label><input className="neu-input" name="name" defaultValue={initial.name} required /></div>
                 <div className="two-col"><div className="form-group"><label>Tipo</label><select className="neu-input" name="type" defaultValue={initial.type || 'PLA'}><option value="PLA">PLA</option><option value="ABS">ABS</option><option value="PETG">PETG</option><option value="TPU">TPU</option><option value="RESIN">Resina</option></select></div><div className="form-group"><label>Cor</label><input className="neu-input" type="color" name="colorHex" defaultValue={initial.colorHex || '#4ade80'} style={{height: 48, padding: 4}} /></div></div>
-                <div className="two-col"><div className="form-group"><label>Preço</label><input className="neu-input" name="price" type="number" step="0.01" defaultValue={initial.pricePerSpool} required /></div><div className="form-group"><label>Peso Total (g)</label><input className="neu-input" name="weight" type="number" defaultValue={initial.weightPerSpoolGrams || 1000} required /></div></div>
+                <div className="two-col"><div className="form-group"><label>PreÃ§o</label><input className="neu-input" name="price" type="number" step="0.01" defaultValue={initial.pricePerSpool} required /></div><div className="form-group"><label>Peso Total (g)</label><input className="neu-input" name="weight" type="number" defaultValue={initial.weightPerSpoolGrams || 1000} required /></div></div>
                 <div className="form-group"><label>Peso Atual (g)</label><input className="neu-input" name="current" type="number" defaultValue={initial.currentWeightGrams || 1000} required /></div>
                 <div className="drawer-footer"><button type="submit" className="neu-btn btn-save" disabled={loading}>Salvar</button><button type="button" className="neu-btn btn-cancel" onClick={() => setDrawerOpen(false)}>Cancelar</button></div>
             </form>
@@ -930,11 +1009,57 @@ function App() {
         );
     };
 
+    const ExpenseForm = () => {
+        const initial = (expenses.find(e => e.id === editingId) || { date: Date.now() }) as Partial<Expense>;
+        const dateValue = initial.date ? new Date(initial.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+
+        return (
+             <form className="erp-form" onSubmit={handleSaveExpense}>
+                <div className="form-group">
+                    <label>DescriÃ§Ã£o</label>
+                    <input className="neu-input" name="description" defaultValue={initial.description} required placeholder="Ex: Rolo PLA Preto" />
+                </div>
+                <div className="form-group">
+                    <label>Categoria</label>
+                    <select className="neu-input" name="category" defaultValue={initial.category || 'outros'}>
+                        <option value="filamento">Filamento</option>
+                        <option value="ferramenta">Ferramenta / PeÃ§as</option>
+                        <option value="manutencao">ManutenÃ§Ã£o</option>
+                        <option value="energia">Energia ElÃ©trica</option>
+                        <option value="fixo">Custo Fixo (Aluguel/Softwares)</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div className="two-col">
+                    <div className="form-group">
+                        <label>Valor (R$)</label>
+                        <input className="neu-input" name="amount" type="number" step="0.01" defaultValue={initial.amount} required />
+                    </div>
+                     <div className="form-group">
+                        <label>Data</label>
+                        <input className="neu-input" name="date" type="date" defaultValue={dateValue} required />
+                    </div>
+                </div>
+                <div className="form-group" style={{flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10}}>
+                    <input type="checkbox" name="isFixed" defaultChecked={initial.isFixed} id="isFixedCheck" style={{width: 20, height: 20}} />
+                    <label htmlFor="isFixedCheck" style={{marginBottom:0}}>Despesa Fixa Recorrente?</label>
+                </div>
+                <p style={{fontSize: '0.8rem', color: 'var(--text-light)', marginBottom: 20}}>
+                    Despesas fixas marcadas aqui sÃ£o usadas para calcular a sugestÃ£o de "Custo Fixo Mensal" na aba de ConfiguraÃ§Ã£o.
+                </p>
+                <div className="drawer-footer">
+                    <button type="submit" className="neu-btn btn-save" disabled={loading}>Salvar</button>
+                    <button type="button" className="neu-btn btn-cancel" onClick={() => setDrawerOpen(false)}>Cancelar</button>
+                </div>
+            </form>
+        );
+    };
+
     return (
         <div className="erp-container">
             <ConfirmationModal isOpen={modalConfig.isOpen} title={modalConfig.title} message={modalConfig.message} onConfirm={modalConfig.onConfirm} onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} isLoading={modalConfig.isLoading} />
             <Toast toasts={toasts} onRemove={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
-            <div className="mobile-header"><img src={theme === 'dark' ? LOGO_DARK : LOGO_LIGHT} alt="Dungeon Below" className="app-logo-mobile" /><button onClick={toggleTheme} className="fab-button" style={{width: 32, height: 32, fontSize: '0.8rem', marginLeft: 'auto', marginRight: 0, boxShadow: 'none', background: 'transparent'}}>{theme === 'light' ? '🌙' : '☀️'}</button></div>
+            <div className="mobile-header"><h1 className="brand-text">Dungeon Below</h1><button onClick={toggleTheme} className="fab-button" style={{width: 32, height: 32, fontSize: '0.8rem', marginLeft: 'auto', marginRight: 0, boxShadow: 'none', background: 'transparent'}}>{theme === 'light' ? 'ðŸŒ™' : 'â˜€ï¸'}</button></div>
             <Navigation currentView={view} setView={setView} toggleTheme={toggleTheme} isDarkMode={theme === 'dark'} />
             <main className="main-content">
                 {view === 'dashboard' && <DashboardView />}
@@ -943,8 +1068,9 @@ function App() {
                 {view === 'quotes' && <QuotesView />}
                 {view === 'calculator' && <SettingsView />}
                 {view === 'extract' && <ExtractView />}
+                {view === 'production' && <ProductionView />}
             </main>
-            <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} title={drawerType === 'filament' ? 'Filamento' : drawerType === 'client' ? 'Cliente' : drawerType === 'quote' ? 'Orçamento' : 'Despesa'}>
+            <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} title={drawerType === 'filament' ? 'Filamento' : drawerType === 'client' ? 'Cliente' : drawerType === 'quote' ? 'OrÃ§amento' : 'Despesa'}>
                 {drawerType === 'filament' && <FilamentForm />}
                 {drawerType === 'client' && <ClientForm />}
                 {drawerType === 'quote' && <QuoteForm />}
@@ -958,4 +1084,4 @@ const rootElement = document.getElementById('root');
 if (rootElement) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(<React.StrictMode><App /></React.StrictMode>);
-}
+        }
