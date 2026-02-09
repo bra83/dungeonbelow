@@ -186,7 +186,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({ quotes, expenses }) => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <div style={{ width: 10, height: 10, background: 'var(--danger)', borderRadius: '50%' }}></div>
-                    <span style={{ color: 'var(--text-main)' }}>Saídas</span>
+                    <span style={{ color: 'var(--text-main)' }}>{"Sa\u00EDdas"}</span>
                 </div>
             </div>
         </div>
