@@ -79,7 +79,7 @@ function App() {
             });
         } else {
             // Se o prompt nÃ£o estiver disponÃ­vel (ex: iOS ou jÃ¡ instalado/rejeitado), mostra instruÃ§Ã£o
-            showToast("Para instalar: Toque em 'Compartilhar' > 'Adicionar \u00E0 Tela de In\u00EDcio'", "info");
+            showToast("Para instalar: Toque em 'Compartilhar' > 'Adicionar Ã  Tela de InÃ­cio'", "info");
         }
     };
 
@@ -139,9 +139,9 @@ function App() {
         const pending = quotes.filter(q => q.status === 'pending').length;
         const approved = quotes.filter(q => q.status === 'approved').length;
         const productionPending = productionOrders.length > 0 
-            ? productionOrders.filter(p => p.Status !== 'Conclu\u00EDda').length 
+            ? productionOrders.filter(p => p.Status !== 'ConcluÃ­da').length 
             : approved;
-        const productionDone = productionOrders.filter(p => p.Status === 'Conclu\u00EDda').length;
+        const productionDone = productionOrders.filter(p => p.Status === 'ConcluÃ­da').length;
 
         return { draft, pending, approved, productionPending, productionDone };
     }, [quotes, productionOrders]);
@@ -241,12 +241,12 @@ function App() {
             setSettings(conf);
 
             if(fils.length === 0 && clis.length === 0 && quotesCloud.length === 0) {
-                 showToast("N\u00E3o foi poss\u00EDvel conectar ao servidor. Verifique a URL do App Script ou sua internet.", "warning");
+                 showToast("NÃ£o foi possÃ­vel conectar ao servidor. Verifique a URL do App Script ou sua internet.", "warning");
             }
 
         } catch (error) {
             console.error("Critical Failure in loadData", error);
-            showToast("Erro cr\u00EDtico ao carregar dados.", "error");
+            showToast("Erro crÃ­tico ao carregar dados.", "error");
         } finally {
             setLoading(false);
         }
@@ -281,9 +281,9 @@ function App() {
 
     const handleDeleteFilament = (id: string) => {
         if (!id) return;
-        confirmAction("Excluir Filamento?", "Esta a\u00E7\u00E3o ir\u00E1 mover o filamento para o arquivo morto.", async () => {
+        confirmAction("Excluir Filamento?", "Esta aÃ§Ã£o irÃ¡ mover o filamento para o arquivo morto.", async () => {
             setFilaments(prev => prev.filter(f => f.id !== id));
-            try { await api.deleteFilament(id); showToast("Filamento exclu\u00EDdo.", "success"); } 
+            try { await api.deleteFilament(id); showToast("Filamento excluÃ­do.", "success"); } 
             catch (err: any) { showToast("Erro API.", "error"); }
         });
     };
@@ -316,14 +316,14 @@ function App() {
         try {
             const clientName = clients.find(c => c.id === quoteData.clientId)?.name;
             await api.saveQuote(quoteData, clientName);
-            showToast("Or\u00E7amento salvo!", "success");
+            showToast("OrÃ§amento salvo!", "success");
         } catch (err: any) { showToast("Erro ao salvar.", "error"); } 
         finally { setLoading(false); }
     };
     
     const handleDeleteQuote = (id: string) => {
         if (!id) return;
-        confirmAction("Excluir Or\u00E7amento?", "A\u00E7\u00E3o irrevers\u00EDvel.", async () => {
+        confirmAction("Excluir OrÃ§amento?", "AÃ§Ã£o irreversÃ­vel.", async () => {
             setQuotes(prev => prev.filter(q => q.id !== id));
             try { await api.deleteQuote(id); showToast("Removido.", "success"); } 
             catch (err: any) { showToast("Erro API.", "error"); }
@@ -365,7 +365,7 @@ function App() {
     const handleApproveQuote = async (quoteId: string) => {
         const quote = quotes.find(q => q.id === quoteId);
         if(!quote || quote.status === 'approved') return;
-        confirmAction("Aprovar Venda?", `Confirmar venda de ${formatCurrency(quote.netValue || quote.finalPrice)} (L\u00EDquido)?`, async () => {
+        confirmAction("Aprovar Venda?", `Confirmar venda de ${formatCurrency(quote.netValue || quote.finalPrice)} (LÃ­quido)?`, async () => {
                 setLoading(true);
                 const client = clients.find(c => c.id === quote.clientId);
                 // 1. Deduct Stock Locally
@@ -395,7 +395,7 @@ function App() {
 
     const handleSaveSettings = async () => {
         setLoading(true);
-        try { await api.saveConfig(settings); showToast("Configura\u00E7\u00F5es salvas!", "success"); } 
+        try { await api.saveConfig(settings); showToast("ConfiguraÃ§Ãµes salvas!", "success"); } 
         catch (err) { showToast("Erro ao salvar.", "error"); } 
         finally { setLoading(false); }
     }
@@ -403,7 +403,7 @@ function App() {
     const handleWhatsapp = (quote: Quote) => {
         const client = clients.find(c => c.id === quote.clientId);
         if(!client) return;
-        const message = `Ol\u00E1 ${client.name}, segue or\u00E7amento:\nTotal: ${formatCurrency(quote.finalPrice)}`;
+        const message = `OlÃ¡ ${client.name}, segue orÃ§amento:\nTotal: ${formatCurrency(quote.finalPrice)}`;
         window.open(`https://wa.me/${client.phone.replace(/\D/g,'')}?text=${encodeURIComponent(message)}`, '_blank');
     };
 
@@ -459,7 +459,7 @@ function App() {
                     <div className="neu-card" style={{padding: 15}}>
                          <div style={{display:'flex', alignItems:'center', gap: 8, color: 'var(--text-light)', marginBottom: 5}}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                            <span style={{fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase'}}>Faturamento L\u00EDq.</span>
+                            <span style={{fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase'}}>Faturamento LÃ­q.</span>
                         </div>
                         <p style={{fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--accent)'}}>{formatCurrency(dashboardSummary.receitaTotal)}</p>
                     </div>
@@ -514,11 +514,11 @@ function App() {
                         <div className="neu-card">
                             <h3 style={{fontSize: '0.9rem', color: 'var(--text-light)', textTransform: 'uppercase', marginBottom: 15, display: 'flex', alignItems: 'center', gap: 8}}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                                Fila de Produ\u00E7\u00E3o
+                                Fila de ProduÃ§Ã£o
                             </h3>
                             {productionItems.length === 0 ? (
                                 <div style={{textAlign:'center', padding: 20, opacity: 0.6}}>
-                                    <p>Nenhuma ordem de produ\u00E7\u00E3o.</p>
+                                    <p>Nenhuma ordem de produÃ§Ã£o.</p>
                                 </div>
                             ) : (
                                 <div style={{display:'flex', flexDirection:'column', gap: 10}}>
@@ -528,7 +528,7 @@ function App() {
                                                 <div style={{fontWeight: 700, fontSize:'0.9rem'}}>OP #{op.ID_OP.split('-')[1] || op.ID_OP}</div>
                                                 <div style={{fontSize:'0.75rem', color: 'var(--text-light)'}}>Ref: Pedido {op.ID_Pedido}</div>
                                             </div>
-                                            <span className={`status ${op.Status === 'Conclu\u00EDda' ? 'approved' : 'pending'}`}>
+                                            <span className={`status ${op.Status === 'ConcluÃ­da' ? 'approved' : 'pending'}`}>
                                                 {op.Status}
                                             </span>
                                         </div>
@@ -591,7 +591,7 @@ function App() {
             </div>
             <div className="grid-cards">
                 {filaments.length === 0 && !loading && (
-                    <div className="neu-card" style={{textAlign:'center', gridColumn: '1 / -1'}}>Nenhum filamento encontrado. Verifique a conex\u00E3o.</div>
+                    <div className="neu-card" style={{textAlign:'center', gridColumn: '1 / -1'}}>Nenhum filamento encontrado. Verifique a conexÃ£o.</div>
                 )}
                 {filaments.map(f => (
                     <FilamentSpool 
@@ -617,7 +617,7 @@ function App() {
             <div className="table-container">
                 <table>
                     <thead>
-                        <tr><th>Nome</th><th>A\u00E7\u00F5es</th></tr>
+                        <tr><th>Nome</th><th>AÃ§Ãµes</th></tr>
                     </thead>
                     <tbody>
                          {clients.length === 0 && !loading && (
@@ -647,7 +647,7 @@ function App() {
         return (
             <div className="view-container">
                 <div className="view-header">
-                    <h1>Or\u00E7amentos</h1>
+                    <h1>OrÃ§amentos</h1>
                     <div style={{display:'flex', gap: 10}}>
                         {loading && <span className="status pending">Carregando...</span>}
                         <button className="fab-button" onClick={() => { setEditingId(null); setDrawerType('quote'); setDrawerOpen(true); }}>+</button>
@@ -655,7 +655,7 @@ function App() {
                 </div>
                 <div className="grid-cards">
                     {sortedQuotes.length === 0 && !loading && (
-                        <div className="neu-card" style={{textAlign:'center', gridColumn: '1 / -1'}}>Nenhum or\u00E7amento encontrado.</div>
+                        <div className="neu-card" style={{textAlign:'center', gridColumn: '1 / -1'}}>Nenhum orÃ§amento encontrado.</div>
                     )}
                     {sortedQuotes.map(q => (
                         <div key={q.id} className="neu-card" style={{position:'relative'}}>
@@ -709,9 +709,9 @@ function App() {
                         <thead>
                             <tr>
                                 <th>Data</th>
-                                <th>Descri\u00E7\u00E3o / Categoria</th>
+                                <th>DescriÃ§Ã£o / Categoria</th>
                                 <th style={{textAlign: 'right'}}>Valor</th>
-                                <th style={{textAlign: 'center'}}>A\u00E7\u00F5es</th>
+                                <th style={{textAlign: 'center'}}>AÃ§Ãµes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -748,24 +748,24 @@ function App() {
         return (
             <div className="view-container">
                 <div className="view-header">
-                    <h1>Ordens de Produ\u00E7\u00E3o</h1>
+                    <h1>Ordens de ProduÃ§Ã£o</h1>
                     {loading && <span className="status pending">Atualizando...</span>}
                 </div>
                 {productionOrders.length === 0 && !loading ? (
-                    <div className="neu-card" style={{textAlign:'center', padding: 30}}>Nenhuma ordem de produ\u00E7\u00E3o ativa.</div>
+                    <div className="neu-card" style={{textAlign:'center', padding: 30}}>Nenhuma ordem de produÃ§Ã£o ativa.</div>
                 ) : (
                     <div className="grid-cards">
                         {productionOrders.map((op, i) => (
                              <div key={i} className="neu-card">
                                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 10}}>
                                     <h3 style={{margin:0}}>OP #{op.ID_OP.split('-')[1] || op.ID_OP}</h3>
-                                    <span className={`status ${op.Status === 'Conclu\u00EDda' ? 'approved' : 'pending'}`}>{op.Status}</span>
+                                    <span className={`status ${op.Status === 'ConcluÃ­da' ? 'approved' : 'pending'}`}>{op.Status}</span>
                                 </div>
-                                <p style={{color: 'var(--text-light)', margin: '5px 0'}}>Pedido Refer\u00EAncia: <strong>{op.ID_Pedido}</strong></p>
+                                <p style={{color: 'var(--text-light)', margin: '5px 0'}}>Pedido ReferÃªncia: <strong>{op.ID_Pedido}</strong></p>
                                 {op.Peso_Real_g ? (
                                     <p style={{margin: '5px 0'}}>Peso Real: <strong>{op.Peso_Real_g}g</strong></p>
                                 ) : (
-                                    <p style={{margin: '5px 0', color: 'var(--text-light)', fontSize: '0.8rem'}}>Peso ainda n\u00E3o registrado</p>
+                                    <p style={{margin: '5px 0', color: 'var(--text-light)', fontSize: '0.8rem'}}>Peso ainda nÃ£o registrado</p>
                                 )}
                              </div>
                         ))}
@@ -790,14 +790,14 @@ function App() {
         return (
             <div className="view-container">
                 <div className="view-header">
-                     <h1>Configura\u00E7\u00E3o</h1>
+                     <h1>ConfiguraÃ§Ã£o</h1>
                      <button className="neu-btn primary" onClick={handleSaveSettings} disabled={loading}>Salvar Nuvem</button>
                 </div>
                 
                 {/* PWA INSTALL BUTTON - ALWAYS VISIBLE */}
                 <div className="neu-card" style={{marginBottom: 20, textAlign: 'center', background: 'rgba(212, 175, 55, 0.1)', border: '1px solid var(--accent)'}}>
                     <h3 style={{fontSize: '0.9rem', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 10}}>Instalar Aplicativo</h3>
-                    <p style={{fontSize: '0.9rem', marginBottom: 15}}>Instale o DungeonERP no seu celular para acesso r\u00E1pido e modo tela cheia.</p>
+                    <p style={{fontSize: '0.9rem', marginBottom: 15}}>Instale o DungeonERP no seu celular para acesso rÃ¡pido e modo tela cheia.</p>
                     <button 
                         className="neu-btn primary" 
                         style={{width: '100%', padding: 12}} 
@@ -810,20 +810,20 @@ function App() {
                 <div className="neu-card" style={{marginBottom: 20, textAlign: 'center'}}>
                     <h3 style={{fontSize: '0.8rem', color: 'var(--text-light)', textTransform: 'uppercase', marginBottom: 5}}>Custo Total da Hora</h3>
                     <p style={{fontSize: '1.8rem', fontWeight: 800, margin: 0}}>{formatCurrency(hourlyCost)}</p>
-                    <small style={{fontSize: '0.7rem', color: 'var(--text-light)'}}>Soma de Fixo, Energia, M\u00E1quina e M\u00E3o de Obra</small>
+                    <small style={{fontSize: '0.7rem', color: 'var(--text-light)'}}>Soma de Fixo, Energia, MÃ¡quina e MÃ£o de Obra</small>
                 </div>
                 <div className="neu-card">
                     <h3 style={{marginTop:0, marginBottom: 20, fontSize: '0.9rem', color:'var(--text-light)', textTransform:'uppercase'}}>Custos Operacionais</h3>
                     <div className="erp-form two-col">
                         <div className="form-group">
-                            <label>Despesas Fixas (R$/m\u00EAs)</label>
+                            <label>Despesas Fixas (R$/mÃªs)</label>
                             <input className="neu-input" type="number" name="monthlyFixedExpenses" value={settings.monthlyFixedExpenses} onChange={handleChange} />
                             {currentMonthTotalFixed > 0 && currentMonthTotalFixed !== settings.monthlyFixedExpenses && (
                                 <button className="neu-btn" style={{fontSize:'0.7rem', padding: '4px 8px', marginTop: 4}} onClick={updateFixedExpenses}>Usar valor calculado: {formatCurrency(currentMonthTotalFixed)}</button>
                             )}
                         </div>
                         <div className="form-group">
-                            <label>Horas Trab./M\u00EAs</label>
+                            <label>Horas Trab./MÃªs</label>
                             <input className="neu-input" type="number" name="workHoursPerMonth" value={settings.workHoursPerMonth} onChange={handleChange} />
                         </div>
                         <div className="form-group">
@@ -831,25 +831,25 @@ function App() {
                             <input className="neu-input" type="number" step="0.01" name="energyCostPerKwh" value={settings.energyCostPerKwh} onChange={handleChange} />
                         </div>
                         <div className="form-group">
-                            <label>Pot\u00EAncia Impressora (W)</label>
+                            <label>PotÃªncia Impressora (W)</label>
                             <input className="neu-input" type="number" name="printerPowerWatts" value={settings.printerPowerWatts} onChange={handleChange} />
                         </div>
                          <div className="form-group" style={{gridColumn: '1 / -1', border: '1px solid rgba(125,125,125,0.1)', padding: 10, borderRadius: 12}}>
-                            <label style={{color: 'var(--text-main)', marginBottom: 10, display: 'block'}}>M\u00E1quina / Deprecia\u00E7\u00E3o</label>
+                            <label style={{color: 'var(--text-main)', marginBottom: 10, display: 'block'}}>MÃ¡quina / DepreciaÃ§Ã£o</label>
                             <div className="two-col">
                                 <div>
-                                    <label style={{fontSize: '0.7rem'}}>Valor M\u00E1quina (R$)</label>
+                                    <label style={{fontSize: '0.7rem'}}>Valor MÃ¡quina (R$)</label>
                                     <input className="neu-input" type="number" name="machineValue" value={settings.machineValue} onChange={handleChange} />
                                 </div>
                                 <div>
-                                    <label style={{fontSize: '0.7rem'}}>Vida \u00DAtil (Horas)</label>
+                                    <label style={{fontSize: '0.7rem'}}>Vida Ãštil (Horas)</label>
                                     <input className="neu-input" type="number" name="machineLifespanHours" value={settings.machineLifespanHours} onChange={handleChange} />
                                 </div>
                             </div>
                             <small style={{display:'block', marginTop:5, fontSize:'0.75rem', color: 'var(--accent)', fontWeight: 700}}>Custo Calculado: {formatCurrency(machineDepreciation)} / hora</small>
                         </div>
                          <div className="form-group" style={{border: '1px solid var(--accent)', padding: 10, borderRadius: 12, background: 'rgba(212, 175, 55, 0.05)'}}>
-                            <label style={{color: 'var(--accent)'}}>M\u00E3o de Obra M\u00E1quina (R$/h)</label>
+                            <label style={{color: 'var(--accent)'}}>MÃ£o de Obra MÃ¡quina (R$/h)</label>
                             <input className="neu-input" type="number" name="laborRatePerHour" value={settings.laborRatePerHour} onChange={handleChange} />
                         </div>
                     </div>
@@ -860,7 +860,7 @@ function App() {
                             <input className="neu-input" type="number" name="failureRatePercent" value={settings.failureRatePercent} onChange={handleChange} />
                         </div>
                         <div className="form-group">
-                            <label>Desperd\u00EDcio Mat. (%)</label>
+                            <label>DesperdÃ­cio Mat. (%)</label>
                             <input className="neu-input" type="number" name="materialWastePercent" value={settings.materialWastePercent || 5} onChange={handleChange} placeholder="Suportes, Poop, Flush" />
                         </div>
                     </div>
@@ -926,7 +926,7 @@ function App() {
                 {items.map((item, idx) => (
                     <div key={item.id} className="neu-card" style={{marginBottom: 10, padding: 15, position: 'relative'}}>
                         <button type="button" className="neu-btn danger" style={{position: 'absolute', right: 5, top: 5, width: 24, height: 24, padding: 0}} onClick={() => deleteItem(idx)}>&times;</button>
-                        <div className="two-col"><div className="form-group"><label>Descri\u00E7\u00E3o</label><input className="neu-input" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} /></div><div className="form-group"><label>Tempo (h)</label><input className="neu-input" type="number" value={item.printTimeHours} onChange={e => updateItem(idx, 'printTimeHours', parseFloat(e.target.value))} /></div></div>
+                        <div className="two-col"><div className="form-group"><label>DescriÃ§Ã£o</label><input className="neu-input" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} /></div><div className="form-group"><label>Tempo (h)</label><input className="neu-input" type="number" value={item.printTimeHours} onChange={e => updateItem(idx, 'printTimeHours', parseFloat(e.target.value))} /></div></div>
                         <div style={{marginTop: 10, padding: 10, background: 'rgba(0,0,0,0.03)', borderRadius: 10}}>
                              <div style={{display: 'flex', justifyContent: 'space-between'}}>
                                 <label>Filamentos</label><button type="button" className="neu-btn primary" onClick={() => addFilamentToItem(idx)} style={{padding: '2px 8px', fontSize: '0.7rem'}}>+ Cor</button>
@@ -942,15 +942,15 @@ function App() {
                     </div>
                 ))}
                 
-                <div className="form-group"><label>Margem L\u00EDquida Desejada (%)</label><input className="neu-input" type="number" value={margin} onChange={e => setMargin(parseFloat(e.target.value))} /></div>
+                <div className="form-group"><label>Margem LÃ­quida Desejada (%)</label><input className="neu-input" type="number" value={margin} onChange={e => setMargin(parseFloat(e.target.value))} /></div>
                 
                 <div className="kpi-card" style={{marginTop: 20}}>
-                    <h3>Pre\u00E7o Sugerido ({channel})</h3>
+                    <h3>PreÃ§o Sugerido ({channel})</h3>
                     <p className="value">{formatCurrency(calc.finalPrice)}</p>
                     
                     <div style={{width: '100%', marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4}}>
                          <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', paddingBottom: 5, borderBottom: '1px solid rgba(125,125,125,0.1)'}}>
-                            <span style={{color: 'var(--text-light)'}}>Custo Produ\u00E7\u00E3o:</span>
+                            <span style={{color: 'var(--text-light)'}}>Custo ProduÃ§Ã£o:</span>
                             <span style={{fontWeight: 700}}>{formatCurrency(calc.totalCost)}</span>
                          </div>
                          
@@ -959,7 +959,7 @@ function App() {
                              <div style={{fontSize: '0.7rem', color: 'var(--text-light)', paddingLeft: 10, display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 5}}>
                                  <div style={{display:'flex', justifyContent:'space-between'}}><span>Material:</span><span>{formatCurrency(calc.breakdown.material)}</span></div>
                                  <div style={{display:'flex', justifyContent:'space-between'}}><span>Energia:</span><span>{formatCurrency(calc.breakdown.energy)}</span></div>
-                                 <div style={{display:'flex', justifyContent:'space-between'}}><span>Deprecia\u00E7\u00E3o:</span><span>{formatCurrency(calc.breakdown.depreciation)}</span></div>
+                                 <div style={{display:'flex', justifyContent:'space-between'}}><span>DepreciaÃ§Ã£o:</span><span>{formatCurrency(calc.breakdown.depreciation)}</span></div>
                                  <div style={{display:'flex', justifyContent:'space-between'}}><span>Fixo + MO:</span><span>{formatCurrency(calc.breakdown.fixed + calc.breakdown.labor)}</span></div>
                                  <div style={{display:'flex', justifyContent:'space-between'}}><span>Risco/Perda:</span><span>{formatCurrency(calc.breakdown.risk)}</span></div>
                              </div>
@@ -970,7 +970,7 @@ function App() {
                             <span style={{color: 'var(--danger)'}}>- {formatCurrency(calc.taxAmount)}</span>
                          </div>
                          <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: 700, borderTop: '1px solid rgba(125,125,125,0.1)', paddingTop: 4}}>
-                            <span>L\u00EDquido (Voc\u00EA Recebe):</span>
+                            <span>LÃ­quido (VocÃª Recebe):</span>
                             <span style={{color: 'var(--accent)'}}>{formatCurrency(calc.netValue)}</span>
                          </div>
                          <small style={{fontSize:'0.7rem', color: 'var(--text-light)', marginTop: 4, textAlign: 'right'}}>
@@ -992,7 +992,7 @@ function App() {
                 <div className="form-group"><label>Marca</label><input className="neu-input" name="brand" defaultValue={initial.brand} required /></div>
                 <div className="form-group"><label>Nome / Cor</label><input className="neu-input" name="name" defaultValue={initial.name} required /></div>
                 <div className="two-col"><div className="form-group"><label>Tipo</label><select className="neu-input" name="type" defaultValue={initial.type || 'PLA'}><option value="PLA">PLA</option><option value="ABS">ABS</option><option value="PETG">PETG</option><option value="TPU">TPU</option><option value="RESIN">Resina</option></select></div><div className="form-group"><label>Cor</label><input className="neu-input" type="color" name="colorHex" defaultValue={initial.colorHex || '#4ade80'} style={{height: 48, padding: 4}} /></div></div>
-                <div className="two-col"><div className="form-group"><label>Pre\u00E7o</label><input className="neu-input" name="price" type="number" step="0.01" defaultValue={initial.pricePerSpool} required /></div><div className="form-group"><label>Peso Total (g)</label><input className="neu-input" name="weight" type="number" defaultValue={initial.weightPerSpoolGrams || 1000} required /></div></div>
+                <div className="two-col"><div className="form-group"><label>PreÃ§o</label><input className="neu-input" name="price" type="number" step="0.01" defaultValue={initial.pricePerSpool} required /></div><div className="form-group"><label>Peso Total (g)</label><input className="neu-input" name="weight" type="number" defaultValue={initial.weightPerSpoolGrams || 1000} required /></div></div>
                 <div className="form-group"><label>Peso Atual (g)</label><input className="neu-input" name="current" type="number" defaultValue={initial.currentWeightGrams || 1000} required /></div>
                 <div className="drawer-footer"><button type="submit" className="neu-btn btn-save" disabled={loading}>Salvar</button><button type="button" className="neu-btn btn-cancel" onClick={() => setDrawerOpen(false)}>Cancelar</button></div>
             </form>
@@ -1019,16 +1019,16 @@ function App() {
         return (
              <form className="erp-form" onSubmit={handleSaveExpense}>
                 <div className="form-group">
-                    <label>Descri\u00E7\u00E3o</label>
+                    <label>DescriÃ§Ã£o</label>
                     <input className="neu-input" name="description" defaultValue={initial.description} required placeholder="Ex: Rolo PLA Preto" />
                 </div>
                 <div className="form-group">
                     <label>Categoria</label>
                     <select className="neu-input" name="category" defaultValue={initial.category || 'outros'}>
                         <option value="filamento">Filamento</option>
-                        <option value="ferramenta">Ferramenta / Pe\u00E7as</option>
-                        <option value="manutencao">Manuten\u00E7\u00E3o</option>
-                        <option value="energia">Energia El\u00E9trica</option>
+                        <option value="ferramenta">Ferramenta / PeÃ§as</option>
+                        <option value="manutencao">ManutenÃ§Ã£o</option>
+                        <option value="energia">Energia ElÃ©trica</option>
                         <option value="fixo">Custo Fixo (Aluguel/Softwares)</option>
                         <option value="outros">Outros</option>
                     </select>
@@ -1048,7 +1048,7 @@ function App() {
                     <label htmlFor="isFixedCheck" style={{marginBottom:0}}>Despesa Fixa Recorrente?</label>
                 </div>
                 <p style={{fontSize: '0.8rem', color: 'var(--text-light)', marginBottom: 20}}>
-                    Despesas fixas marcadas aqui s\u00E3o usadas para calcular a sugest\u00E3o de "Custo Fixo Mensal" na aba de Configura\u00E7\u00E3o.
+                    Despesas fixas marcadas aqui sÃ£o usadas para calcular a sugestÃ£o de "Custo Fixo Mensal" na aba de ConfiguraÃ§Ã£o.
                 </p>
                 <div className="drawer-footer">
                     <button type="submit" className="neu-btn btn-save" disabled={loading}>Salvar</button>
@@ -1073,7 +1073,7 @@ function App() {
                 {view === 'extract' && <ExtractView />}
                 {view === 'production' && <ProductionView />}
             </main>
-            <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} title={drawerType === 'filament' ? 'Filamento' : drawerType === 'client' ? 'Cliente' : drawerType === 'quote' ? 'Or\u00E7amento' : 'Despesa'}>
+            <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} title={drawerType === 'filament' ? 'Filamento' : drawerType === 'client' ? 'Cliente' : drawerType === 'quote' ? 'OrÃ§amento' : 'Despesa'}>
                 {drawerType === 'filament' && <FilamentForm />}
                 {drawerType === 'client' && <ClientForm />}
                 {drawerType === 'quote' && <QuoteForm />}
@@ -1087,4 +1087,4 @@ const rootElement = document.getElementById('root');
 if (rootElement) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(<React.StrictMode><App /></React.StrictMode>);
-                }
+}
