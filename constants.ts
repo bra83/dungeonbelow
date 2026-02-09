@@ -7,7 +7,7 @@ import { Settings } from './types';
 
 // URL do Backend (Google Apps Script)
 // ATENÇÃO: Se você reimplantou o script, gere um novo deployment e cole a URL aqui.
-export const API_URL = 'https://script.google.com/macros/s/AKfycbzJkXRBbim5F9sUTx0_pRpTL9tMz6LGQXy0hsCZaAW2-tdthSHVBzLD7faRUC0aYqf-oA/exec';
+export const API_URL = 'https://script.google.com/macros/s/AKfycbyeB-fM95xjJLs1ZZ9thRUtLVdnA5aagkOdyegC-EWXVJiDxbYNuU-axvWStJHNUHQJkQ/exec';
 
 // URL Logos
 // DICA: Se o repositório for privado, use imagens na pasta /public e coloque aqui apenas "/logo-light.png"
